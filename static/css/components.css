@@ -1,0 +1,141 @@
+/* 组件样式 - 使用Bootstrap 5 */
+
+.card {
+    box-shadow: none;
+    border: none;
+    margin-bottom: 0;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+}
+
+.btn {
+    transition: all 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.alert {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.badge {
+    font-size: 0.85em;
+}
+
+.modal-content {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* 站点卡片 */
+.site-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: visible;
+    flex-shrink: 0; /* 防止卡片被压缩 */
+}
+
+/* 站点卡片内容区域 */
+.site-card-body {
+    overflow: visible;
+    padding: 0;
+    flex-shrink: 0; /* 防止内容被压缩 */
+}
+
+.site-card-header {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.site-card-header input {
+    font-weight: 500;
+    font-size: 1.05em;
+}
+
+/* 指令项 */
+.directive-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fafafa;
+    transition: background 0.2s;
+}
+
+.directive-item:hover {
+    background: #f5f5f5;
+}
+
+.directive-item:last-child {
+    border-bottom: none;
+}
+
+.directive-name {
+    font-weight: 500;
+    min-width: 150px;
+    max-width: 150px;
+}
+
+.directive-description {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+.directive-args {
+    flex: 1;
+    min-width: 0;
+}
+
+.directive-args input {
+    width: 100%;
+}
+
+.arg-badge {
+    background: #e9ecef;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    display: inline-block;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3em;
+    margin-bottom: 15px;
+}

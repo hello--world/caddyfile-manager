@@ -1,0 +1,101 @@
+/* Split.js 可调整宽度面板样式 */
+
+/* Split.js 分割线样式 */
+.gutter {
+    background-color: #e9ecef;
+    background-repeat: no-repeat;
+    background-position: 50%;
+    cursor: col-resize;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+.gutter:hover {
+    background-color: #0d6efd;
+}
+
+.gutter.gutter-horizontal {
+    cursor: col-resize;
+    width: 4px;
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+}
+
+.gutter.gutter-vertical {
+    cursor: row-resize;
+    height: 4px;
+    border-top: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* 分割线拖拽时的样式 */
+.gutter.dragging {
+    background-color: #0d6efd;
+    opacity: 0.8;
+}
+
+/* 确保面板内容正确显示 */
+.split {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    overflow: hidden;
+}
+
+.split.split-horizontal {
+    flex-direction: row;
+}
+
+.split.split-vertical {
+    flex-direction: column;
+}
+
+.split > * {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* 主内容区域 */
+.main-content-area {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* 编辑器分割容器 */
+.editor-split-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* 确保面板内容可以滚动 */
+#sitesListColumn,
+#buildModeColumn,
+#codeModeColumn {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 响应式：小屏幕时禁用Split.js */
+@media (max-width: 768px) {
+    .gutter {
+        display: none !important;
+    }
+    
+    .split {
+        flex-direction: column !important;
+    }
+    
+    #sitesListColumn,
+    #buildModeColumn,
+    #codeModeColumn {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 100% !important;
+    }
+}
+

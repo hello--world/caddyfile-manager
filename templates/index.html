@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caddyfile 可视化编辑器</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="{{ url_for('static', filename='lib/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="{{ url_for('static', filename='lib/bootstrap-icons/font/bootstrap-icons.css') }}" rel="stylesheet">
+    <!-- SimpleBar -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='lib/simplebar/simplebar.min.css') }}">
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='lib/codemirror/lib/codemirror.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='lib/codemirror/theme/monokai.css') }}">
+    <!-- 自定义样式 -->
+    <link href="{{ url_for('static', filename='css/layout.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/sites.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/split.css') }}" rel="stylesheet">
+</head>
+<body class="d-flex flex-column" style="height: 100vh; overflow: hidden;">
+    <div class="container-fluid d-flex flex-column h-100 p-0">
+        <!-- 顶部工具栏 -->
+        <div class="toolbar flex-shrink-0 border-bottom bg-white shadow-sm">
+            <div class="d-flex align-items-center justify-content-between p-2 px-3 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1">
+                    <!-- 文件信息显示 -->
+                    <div class="d-flex align-items-center gap-2 text-muted small" id="fileInfo" style="min-width: 200px;">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <span id="filePath">配置文件：加载中...</span>
+                        <span>，状况：</span>
+                        <span class="badge" id="fileStatus">未保存</span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button class="btn btn-sm btn-primary" onclick="loadCaddyfile()" title="加载">
+                        <i class="bi bi-arrow-clockwise"></i> <span class="d-none d-sm-inline">加载</span>
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="saveCaddyfile()" title="保存">
+                        <i class="bi bi-save"></i> <span class="d-none d-sm-inline">保存</span>
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="validateCaddyfile()" title="验证">
+                        <i class="bi bi-check-circle"></i> <span class="d-none d-sm-inline">验证</span>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="reloadCaddy()" title="重载">
+                        <i class="bi bi-arrow-repeat"></i> <span class="d-none d-sm-inline">重载</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区 - 使用Split.js实现可调整宽度 -->
+        <div class="main-content-area flex-grow-1" style="display: flex; min-height: 0; overflow: hidden;">
+            <!-- 左侧站点列表 -->
+            <div class="d-flex flex-column border-end bg-white" id="sitesListColumn" style="min-width: 200px; max-width: 50%;">
+                <div class="card d-flex flex-column h-100 border-0 rounded-0">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-shrink-0 border-bottom">
+                        <h6 class="mb-0" id="sitesListHeader" style="cursor: pointer;" onclick="toggleSitesList()">
+                            <i class="bi bi-list-ul"></i> 
+                            <span id="sitesListTitle">站点【0】</span>
+                            <i class="bi bi-chevron-down ms-1 d-md-none" id="sitesListToggleIcon"></i>
+                        </h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-success" onclick="addSite()" title="添加站点">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="sitesListContent" class="d-flex flex-column collapse d-md-flex" style="flex: 1; min-height: 0; overflow: hidden;">
+                        <!-- 搜索框 -->
+                        <div class="card-body p-1 flex-shrink-0 border-bottom" style="padding: 0.15rem 0.5rem !important; max-height: 40px !important;">
+                            <label for="siteSearchInput" class="visually-hidden">搜索站点</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="siteSearchInput" name="siteSearchInput" placeholder="搜索站点..." oninput="filterSites()">
+                                <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()" title="清除搜索">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0 flex-grow-1 d-flex flex-column" id="sitesListScrollContainer" style="min-height: 0; padding: 0 !important;">
+                            <div id="sitesList" class="list-group list-group-flush" style="margin: 0 !important; padding: 0 !important; width: 100%;">
+                                <!-- 站点列表将在这里动态生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧编辑区：Build模式和Code模式并排显示 -->
+            <div class="d-flex flex-column bg-white" id="editorColumn" style="flex: 1; min-width: 0; position: relative;">
+                <div class="editor-split-container flex-grow-1" style="display: flex; min-height: 0; overflow: hidden;">
+                    <!-- Build 模式编辑器（左侧） -->
+                    <div class="d-flex flex-column border-end" id="buildModeColumn" style="min-width: 300px; max-width: 70%;">
+                        <div class="card d-flex flex-column flex-grow-1 border-0 rounded-0 h-100" id="buildModeEditor">
+                            <div class="card-header d-flex justify-content-between align-items-center flex-shrink-0 border-bottom">
+                                <h6 class="mb-0"><i class="bi bi-layout-text-window"></i> <span>可视化编辑</span></h6>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button class="btn btn-sm btn-primary" id="addDirectiveBtn" onclick="if(window.currentSiteIndex >= 0) addDirective(window.currentSiteIndex)" style="display: none;">
+                                        <i class="bi bi-plus"></i> <span>添加指令</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" id="templateBtn" onclick="if(window.currentSiteIndex >= 0) showTemplateModal(window.currentSiteIndex)" title="使用模板" style="display: none;">
+                                        <i class="bi bi-file-earmark-text"></i> <span>模板</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body flex-grow-1 d-flex flex-column" style="min-height: 0; overflow: hidden; position: relative;">
+                                <div id="sitesContainer" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow-y: auto; overflow-x: hidden;">
+                                    <!-- 站点列表将在这里动态生成 -->
+                                    
+                                    <!-- 未解析内容区域 -->
+                                    <div id="unparsedContainer" class="mt-3" style="display: none;">
+                                        <div class="card border-warning">
+                                            <div class="card-header bg-warning text-dark">
+                                                <h6 class="mb-0">
+                                                    <i class="bi bi-exclamation-triangle"></i> 未解析内容（已保留）
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <pre id="unparsedContent" class="bg-light p-2 rounded"></pre>
+                                                <small class="text-muted">这些内容无法被解析，但已保留在配置文件中</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Code 模式编辑器（右侧） -->
+                    <div class="d-flex flex-column" id="codeModeColumn" style="flex: 1; min-width: 300px;">
+                        <div class="card d-flex flex-column flex-grow-1 border-0 rounded-0 h-100" id="codeModeEditor">
+                            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 flex-shrink-0 border-bottom">
+                                <h6 class="mb-0"><i class="bi bi-code-square"></i> <span>代码编辑</span></h6>
+                                <div class="d-flex gap-2">
+                                    <span class="badge bg-secondary" id="lineCount">行数: 0</span>
+                                    <span class="badge bg-secondary" id="charCount">字符: 0</span>
+                                </div>
+                            </div>
+                            <div class="card-body p-0 flex-grow-1 d-flex flex-column" style="min-height: 0; position: relative; overflow: hidden;">
+                                <label for="caddyfileEditor" class="visually-hidden">Caddyfile编辑器</label>
+                                <textarea id="caddyfileEditor" name="caddyfileEditor" class="visually-hidden"></textarea>
+                                <div id="codeMirrorContainer" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; overflow: hidden;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 消息提示区 -->
+                <div id="messageArea" style="position: absolute; bottom: 0; left: 0; right: 0; z-index: 10; pointer-events: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载提示 -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <p class="mt-2" id="loadingText">处理中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="{{ url_for('static', filename='lib/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <!-- SimpleBar -->
+    <script src="{{ url_for('static', filename='lib/simplebar/simplebar.min.js') }}"></script>
+    <!-- Split.js - 可调整宽度的面板 -->
+    <script src="{{ url_for('static', filename='lib/split.js/split.min.js') }}"></script>
+    <!-- CodeMirror -->
+    <script src="{{ url_for('static', filename='lib/codemirror/lib/codemirror.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/codemirror/mode/shell/shell.js') }}"></script>
+    <!-- 应用脚本 -->
+    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
+

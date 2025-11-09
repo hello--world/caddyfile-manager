@@ -1,0 +1,39 @@
+# 排除 Caddyfile，从外部挂载
+Caddyfile
+caddyfile/
+*.caddyfile
+
+# Git 相关
+.git
+.github
+.gitignore
+
+# 文档
+README.md
+*.md
+
+# 数据目录（从外部挂载）
+data/
+
+# Python 相关
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 其他
+.DS_Store
+*.log
+

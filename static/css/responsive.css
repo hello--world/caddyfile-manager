@@ -1,0 +1,200 @@
+/* 响应式样式 - 使用Split.js实现可调整宽度 */
+
+/* 工具栏响应式 */
+.toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* 移动端和平板优化 */
+@media (max-width: 768px) {
+    /* 工具栏 */
+    .toolbar {
+        padding: 4px;
+    }
+    
+    .toolbar .btn {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    /* 主内容区域垂直布局 */
+    .main-content-area {
+        flex-direction: column !important;
+    }
+    
+    /* 站点列表列 - 移动端全宽 */
+    #sitesListColumn {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 100% !important;
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    /* 移动端站点列表默认折叠 */
+    #sitesListContent.collapse:not(.show) {
+        display: none !important;
+    }
+    
+    #sitesListContent.collapse.show {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        max-height: 50vh;
+        overflow: hidden;
+    }
+    
+    /* 移动端站点列表滚动容器 */
+    #sitesListContent.show #sitesListScrollContainer {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        max-height: calc(50vh - 40px); /* 减去搜索框高度 */
+        display: flex !important;
+        flex-direction: column;
+    }
+    
+    /* 确保站点列表在移动端可见 */
+    #sitesListContent.show #sitesList {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 100%;
+    }
+    
+    /* 确保站点列表项在移动端可见 */
+    #sitesListContent.show .list-group-item {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* 站点列表头部可点击 */
+    #sitesListHeader {
+        user-select: none;
+    }
+    
+    /* 切换图标动画 */
+    #sitesListToggleIcon {
+        transition: transform 0.3s;
+        display: inline-block;
+    }
+    
+    /* 展开时图标旋转 */
+    #sitesListContent.show ~ .card-header #sitesListToggleIcon.bi-chevron-up {
+        transform: rotate(180deg);
+    }
+    
+    /* 编辑器列 - 移动端全宽 */
+    #editorColumn {
+        width: 100% !important;
+        flex: 1 !important;
+        min-width: 100% !important;
+    }
+    
+    /* 编辑器分割容器 - 移动端垂直布局 */
+    .editor-split-container {
+        flex-direction: column !important;
+    }
+    
+    /* Build模式和Code模式垂直布局 */
+    #buildModeColumn {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 100% !important;
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+        min-height: 30vh;
+    }
+    
+    #codeModeColumn {
+        width: 100% !important;
+        flex: 1 !important;
+        min-width: 100% !important;
+    }
+    
+    /* 指令列表容器 - 绝对定位填充父容器 */
+    #sitesContainer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    
+    /* CodeMirror容器 */
+    #codeMirrorContainer {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+    
+    /* 移动端指令项垂直布局 */
+    .directive-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .directive-name {
+        min-width: 100%;
+        max-width: 100%;
+    }
+}
+
+/* 平板优化 */
+@media (min-width: 769px) and (max-width: 991px) {
+    .toolbar {
+        padding: 8px;
+    }
+    
+    .toolbar .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+/* 桌面端：使用Split.js实现可调整宽度 */
+@media (min-width: 992px) {
+    /* 站点列表内容 - 桌面端始终显示 */
+    #sitesListContent {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+    
+    /* 站点列表滚动容器 */
+    #sitesListScrollContainer {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    
+    /* 指令列表容器 - 绝对定位填充父容器 */
+    #sitesContainer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    
+    /* CodeMirror容器 */
+    #codeMirrorContainer {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+}

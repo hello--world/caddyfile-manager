@@ -1,0 +1,107 @@
+/* 基础布局样式 - 使用Bootstrap 5 */
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+}
+
+.container-fluid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+}
+
+/* 顶部工具栏 */
+.toolbar {
+    min-height: 50px;
+    z-index: 10;
+    position: relative;
+    background-color: white;
+}
+
+/* 确保editorColumn是相对定位，以便messageArea绝对定位 */
+#editorColumn {
+    position: relative;
+}
+
+/* 消息提示框：使用绝对定位，完全脱离文档流，不影响布局 */
+#messageArea {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-height: 0;
+    max-height: 0;
+    height: 0;
+    overflow: hidden;
+    background-color: transparent;
+    z-index: 100;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    padding: 0;
+    margin: 0;
+    pointer-events: none;
+    flex: none;
+    flex-shrink: 0;
+    flex-grow: 0;
+    display: block;
+}
+
+#messageArea:not(:empty) {
+    min-height: auto;
+    max-height: 200px;
+    height: auto;
+    padding: 0.5rem;
+    overflow: visible;
+    pointer-events: none;
+    display: block;
+}
+
+/* 确保消息提示框内的内容可以交互 */
+#messageArea .alert {
+    pointer-events: auto;
+}
+
+/* 确保CodeMirror编辑器高度和宽度正确 */
+#codeMirrorContainer {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#codeMirrorContainer .CodeMirror {
+    height: 100%;
+    min-height: 100%;
+    width: 100%;
+    max-width: 100%;
+}
+
+#codeMirrorContainer .CodeMirror-scroll {
+    min-height: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+#codeMirrorContainer .CodeMirror-lines {
+    max-width: 100%;
+}
+
+/* 高亮行样式 */
+#codeMirrorContainer .CodeMirror-line.highlight-line {
+    background-color: rgba(255, 255, 0, 0.2) !important;
+    transition: background-color 0.3s ease;
+}

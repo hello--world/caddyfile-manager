@@ -1,0 +1,121 @@
+# 系统指令配置（会提交到Git）
+# 此文件包含所有指令的默认配置选项
+# 系统配置不允许通过界面修改，只能通过代码/配置文件修改
+
+directives:
+  # HTTP头指令配置
+  header:
+    options:
+      - value: "-Server"
+        label: "隐藏服务器信息 (-Server)"
+        description: "删除Server响应头，隐藏服务器信息"
+      - value: "X-Frame-Options SAMEORIGIN"
+        label: "防止点击劫持 (X-Frame-Options)"
+        description: "防止页面被嵌入iframe"
+      - value: "X-Frame-Options DENY"
+        label: "禁止嵌入 (X-Frame-Options DENY)"
+        description: "完全禁止页面被嵌入"
+      - value: "X-Content-Type-Options nosniff"
+        label: "防止MIME类型嗅探"
+        description: "防止浏览器猜测内容类型"
+      - value: "Strict-Transport-Security max-age=31536000"
+        label: "强制HTTPS (HSTS)"
+        description: "强制使用HTTPS连接"
+      - value: "Content-Security-Policy default-src self"
+        label: "内容安全策略 (CSP)"
+        description: "限制资源加载来源"
+      - value: "Access-Control-Allow-Origin *"
+        label: "允许所有跨域"
+        description: "允许所有来源的跨域请求"
+      - value: "Access-Control-Allow-Origin {http.request.header.Origin}"
+        label: "允许同源跨域"
+        description: "允许同源跨域请求"
+      - value: "Access-Control-Allow-Methods GET,POST,OPTIONS"
+        label: "允许的HTTP方法"
+        description: "指定允许的HTTP方法"
+      - value: "Access-Control-Allow-Headers *"
+        label: "允许所有请求头"
+        description: "允许所有请求头"
+      - value: "X-XSS-Protection 1; mode=block"
+        label: "XSS保护"
+        description: "启用浏览器XSS过滤器"
+      - value: "Referrer-Policy no-referrer"
+        label: "不发送Referrer"
+        description: "不发送Referrer信息"
+      - value: "Referrer-Policy strict-origin-when-cross-origin"
+        label: "跨域时发送Referrer"
+        description: "跨域时发送Referrer信息"
+  
+  # 反向代理指令配置
+  reverse_proxy:
+    options: []
+    placeholder: "目标地址 (如: localhost:8080)"
+    description: "将请求转发到后端服务器"
+  
+  # 静态文件服务指令配置
+  file_server:
+    options: []
+    placeholder: "留空或填写路径"
+    description: "提供静态文件服务"
+  
+  # 网站根目录指令配置
+  root:
+    options: []
+    placeholder: "路径 (如: * /var/www)"
+    description: "设置网站文件根目录"
+  
+  # HTTPS证书指令配置
+  tls:
+    options: []
+    placeholder: "邮箱 (如: admin@example.com)"
+    description: "自动申请SSL证书"
+  
+  # 响应内容指令配置
+  respond:
+    options: []
+    placeholder: "内容 (如: \"Hello, World!\")"
+    description: "直接返回响应内容"
+  
+  # URL重写指令配置
+  rewrite:
+    options: []
+    placeholder: "规则 (如: /api/* /api/v1/*)"
+    description: "重写请求URL"
+  
+  # 内容编码指令配置
+  encode:
+    options: []
+    placeholder: "编码类型 (如: gzip zstd)"
+    description: "压缩响应内容"
+  
+  # 基础认证指令配置
+  basicauth:
+    options: []
+    placeholder: "用户名 密码"
+    description: "添加HTTP基础认证（只需输入用户名和密码）"
+    specialInput: "basicauth"
+  
+  # 重定向指令配置
+  redir:
+    options: []
+    placeholder: "目标URL (如: https://example.com)"
+    description: "重定向到其他地址"
+  
+  # 日志指令配置
+  log:
+    options: []
+    placeholder: "日志名称"
+    description: "配置访问日志"
+  
+  # 跨域指令配置
+  cors:
+    options: []
+    placeholder: "留空或配置选项"
+    description: "启用CORS跨域支持"
+  
+  # 缓存指令配置
+  cache:
+    options: []
+    placeholder: "缓存配置"
+    description: "配置HTTP缓存"
+
