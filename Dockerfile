@@ -18,6 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py .
 COPY templates/ ./templates/
 COPY static/ ./static/
+COPY config/ ./config/
+COPY caddyfile_parser.py .
 
 # 创建Caddyfile目录
 RUN mkdir -p /etc/caddy

@@ -36,13 +36,13 @@ python app.py
 
 ```bash
 # 下载安装脚本并执行（自动从GitHub下载配置文件）
-curl -o install.sh https://raw.githubusercontent.com/hello--world/caddyfile-manager/main/install.sh && chmod +x install.sh && ./install.sh
+curl -o install.sh https://raw.githubusercontent.com/hello--world/caddyfile-manager/refs/heads/master/install.sh && chmod +x install.sh && ./install.sh
 ```
 
 **或者使用wget：**
 
 ```bash
-wget -O install.sh https://raw.githubusercontent.com/hello--world/caddyfile-manager/main/install.sh && chmod +x install.sh && ./install.sh
+wget -O install.sh https://raw.githubusercontent.com/hello--world/caddyfile-manager/refs/heads/master/install.sh && chmod +x install.sh && ./install.sh
 ```
 
 **说明：**
