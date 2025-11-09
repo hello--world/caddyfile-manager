@@ -45,7 +45,7 @@ docker pull ghcr.io/hello--world/caddyfile-manager:latest
 
 1. 构建镜像：
 ```bash
-docker build -t caddyfile-editor .
+docker build -t ghcr.io/hello--world/caddyfile-manager:latest .
 ```
 
 2. 运行容器（**重要：需要挂载外部 Caddyfile**）：
@@ -54,15 +54,52 @@ docker run -d \
   --name caddyfile-editor \
   -p 5000:5000 \
   -v $(pwd)/caddyfile:/etc/caddy \
-  caddyfile-editor
+  -e AUTH_TOKEN=your-secret-token \
+  ghcr.io/hello--world/caddyfile-manager:latest
 ```
 
-或者使用docker-compose：
+**注意**：容器名称建议使用 `caddyfile-editor`，而不是镜像名称，便于后续管理。
+
+或者使用docker-compose（在docker-compose.yml中设置AUTH_TOKEN环境变量）：
 ```bash
+# 编辑 docker-compose.yml，取消注释 AUTH_TOKEN 行并设置你的token
 docker-compose up -d
 ```
 
-**注意**：镜像中不包含 Caddyfile，必须通过卷挂载的方式从外部提供 Caddyfile 文件。
+**注意**：
+- 镜像中不包含 Caddyfile，必须通过卷挂载的方式从外部提供 Caddyfile 文件
+- 设置 `AUTH_TOKEN` 环境变量可启用访问认证，首次访问时会要求输入token
+
+#### 更新镜像
+
+使用 `latest` 标签时，需要定期拉取最新版本并重启容器：
+
+**使用 docker run 方式：**
+```bash
+# 1. 停止并删除旧容器
+docker stop caddyfile-editor
+docker rm caddyfile-editor
+
+# 2. 拉取最新镜像
+docker pull ghcr.io/hello--world/caddyfile-manager:latest
+
+# 3. 重新运行容器（使用相同的参数）
+docker run -d \
+  --name caddyfile-editor \
+  -p 5000:5000 \
+  -v $(pwd)/caddyfile:/etc/caddy \
+  -e AUTH_TOKEN=your-secret-token \
+  ghcr.io/hello--world/caddyfile-manager:latest
+```
+
+**使用 docker-compose 方式：**
+```bash
+# 1. 拉取最新镜像
+docker-compose pull
+
+# 2. 重新创建并启动容器
+docker-compose up -d
+```
 
 ### 方式三：systemd服务部署
 
@@ -99,6 +136,7 @@ sudo systemctl status caddyfile-manager
 - `PORT`: Web服务端口（默认：`5000`）
 - `HOST`: Web服务监听地址（默认：`0.0.0.0`）
 - `DEBUG`: 调试模式（默认：`False`）
+- `AUTH_TOKEN`: 访问认证token（可选，设置后首次访问需要输入token）
 
 ### 使用说明
 

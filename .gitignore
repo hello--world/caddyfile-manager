@@ -47,3 +47,4 @@ data/
 config/custom_directives.yaml
 config/custom_*.yaml
 
+.env

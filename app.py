@@ -11,6 +11,7 @@ import yaml
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
+from functools import wraps
 from dotenv import load_dotenv, find_dotenv
 from caddyfile_parser import parse_caddyfile, generate_caddyfile, format_caddyfile
 
@@ -44,6 +45,9 @@ REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_DB = int(os.getenv('REDIS_DB', 0))
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
 REDIS_KEY_PREFIX = os.getenv('REDIS_KEY_PREFIX', 'caddyfile:directives:')
+
+# 认证配置
+AUTH_TOKEN = os.getenv('AUTH_TOKEN', None)
 
 def load_config():
     """加载配置文件"""
@@ -236,12 +240,69 @@ def load_headers_config():
         print(f'加载HTTP头配置失败: {e}')
         return []
 
+def require_auth(f):
+    """Token认证装饰器"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # 如果未设置AUTH_TOKEN，则不启用认证
+        if not AUTH_TOKEN:
+            return f(*args, **kwargs)
+        
+        # 从请求头获取token
+        token = request.headers.get('Authorization', '')
+        # 支持 "Bearer <token>" 或直接 "<token>" 格式
+        if token.startswith('Bearer '):
+            token = token[7:]
+        token = token.strip()
+        
+        # 验证token
+        if not token or token != AUTH_TOKEN:
+            return jsonify({
+                'success': False,
+                'error': '未授权：需要有效的认证token'
+            }), 401
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/')
 def index():
     """主页面"""
     return render_template('index.html')
 
+@app.route('/api/login', methods=['POST'])
+def login():
+    """登录接口，验证token"""
+    try:
+        # 如果未设置AUTH_TOKEN，则不需要登录
+        if not AUTH_TOKEN:
+            return jsonify({
+                'success': True,
+                'message': '未启用认证'
+            })
+        
+        data = request.get_json()
+        token = data.get('token', '').strip()
+        
+        # 验证token
+        if not token or token != AUTH_TOKEN:
+            return jsonify({
+                'success': False,
+                'error': '无效的token'
+            }), 401
+        
+        return jsonify({
+            'success': True,
+            'message': '登录成功'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/caddyfile', methods=['GET'])
+@require_auth
 def get_caddyfile():
     """获取当前Caddyfile内容"""
     try:
@@ -317,6 +378,7 @@ def check_duplicate_addresses(sites):
     return duplicates
 
 @app.route('/api/caddyfile', methods=['POST'])
+@require_auth
 def save_caddyfile():
     """保存Caddyfile"""
     try:
@@ -500,6 +562,7 @@ def validate_caddyfile():
         }), 500
 
 @app.route('/api/reload', methods=['POST'])
+@require_auth
 def reload_caddy():
     """重新加载Caddy配置"""
     try:

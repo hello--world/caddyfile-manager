@@ -168,6 +168,28 @@
         </div>
     </div>
 
+    <!-- 登录模态框 -->
+    <div class="modal fade" id="loginModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">请输入访问令牌</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="tokenInput" class="form-label">Token</label>
+                        <input type="password" class="form-control" id="tokenInput" placeholder="请输入token" autocomplete="off" onkeypress="if(event.key==='Enter') handleLogin()">
+                        <div class="form-text">请通过环境变量 AUTH_TOKEN 设置访问令牌</div>
+                    </div>
+                    <div id="loginError" class="alert alert-danger d-none" role="alert"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="handleLogin()">登录</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap 5 JS -->
     <script src="{{ url_for('static', filename='lib/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <!-- SimpleBar -->

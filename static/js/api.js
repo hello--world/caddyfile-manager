@@ -3,6 +3,139 @@
 // 全局变量：HTTP头配置
 window.commonHeaders = [];
 
+// Token管理
+const TOKEN_STORAGE_KEY = 'caddyfile_auth_token';
+
+// 获取保存的token
+function getToken() {
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+// 保存token
+function saveToken(token) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+}
+
+// 清除token
+function clearToken() {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+// 显示登录对话框
+function showLoginModal() {
+    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'), {
+        backdrop: 'static',
+        keyboard: false
+    });
+    loginModal.show();
+    // 清空输入框和错误信息
+    document.getElementById('tokenInput').value = '';
+    const errorEl = document.getElementById('loginError');
+    errorEl.classList.add('d-none');
+    errorEl.textContent = '';
+    // 聚焦输入框
+    setTimeout(() => {
+        document.getElementById('tokenInput').focus();
+    }, 300);
+}
+
+// 处理登录
+async function handleLogin() {
+    const tokenInput = document.getElementById('tokenInput');
+    const token = tokenInput.value.trim();
+    const errorEl = document.getElementById('loginError');
+    
+    if (!token) {
+        errorEl.textContent = '请输入token';
+        errorEl.classList.remove('d-none');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ token: token })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // 保存token
+            saveToken(token);
+            // 关闭登录对话框
+            const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            if (loginModal) {
+                loginModal.hide();
+            }
+            // 重新加载页面或刷新数据
+            if (typeof loadCaddyfile === 'function') {
+                loadCaddyfile();
+            }
+        } else {
+            errorEl.textContent = data.error || '登录失败';
+            errorEl.classList.remove('d-none');
+        }
+    } catch (error) {
+        errorEl.textContent = '登录失败: ' + error.message;
+        errorEl.classList.remove('d-none');
+    }
+}
+
+// 处理401错误，显示登录对话框
+function handleUnauthorized() {
+    clearToken();
+    showLoginModal();
+}
+
+// 带认证的fetch包装函数（带超时）
+async function fetchWithAuth(url, options = {}, timeout = 10000) {
+    const token = getToken();
+    
+    // 设置请求头
+    if (!options.headers) {
+        options.headers = {};
+    }
+    
+    // 如果有token，添加到请求头
+    if (token) {
+        options.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    // 添加超时控制
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        // 如果是401错误，显示登录对话框
+        if (response.status === 401) {
+            handleUnauthorized();
+            throw new Error('未授权，请登录');
+        }
+        
+        return response;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        // 如果是网络错误或其他错误，也检查是否需要登录
+        if (error.name === 'AbortError') {
+            throw new Error('请求超时，请检查网络连接或服务器状态');
+        }
+        if (error.message.includes('未授权')) {
+            throw error;
+        }
+        throw error;
+    }
+}
+
 // 加载HTTP头配置
 async function loadHeadersConfig() {
     try {
@@ -175,7 +308,7 @@ async function loadCaddyfile() {
         }, 15000);
         
         try {
-            const response = await fetchWithTimeout('/api/caddyfile', {}, 10000);
+            const response = await fetchWithAuth('/api/caddyfile', {}, 10000);
             
             // 清除强制关闭定时器
             clearTimeout(forceCloseTimeout);
@@ -285,7 +418,7 @@ async function saveCaddyfile() {
             unparsed: window.unparsedData
         };
         
-        const response = await fetchWithTimeout('/api/caddyfile', {
+        const response = await fetchWithAuth('/api/caddyfile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -398,8 +531,9 @@ async function reloadCaddy() {
     showLoading('正在重新加载Caddy...');
     
     try {
-        const response = await fetchWithTimeout('/api/reload', {
-            method: 'POST'
+        const response = await fetchWithAuth('/api/reload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
         }, 10000);
         
         if (!response.ok) {
