@@ -30,6 +30,58 @@ python app.py
 
 ### 方式二：Docker部署
 
+#### 快速安装（推荐）
+
+**一行命令安装：**
+
+```bash
+# 下载安装脚本并执行（自动从GitHub下载配置文件）
+curl -o install.sh https://raw.githubusercontent.com/hello--world/caddyfile-manager/main/install.sh && chmod +x install.sh && ./install.sh
+```
+
+**或者使用wget：**
+
+```bash
+wget -O install.sh https://raw.githubusercontent.com/hello--world/caddyfile-manager/main/install.sh && chmod +x install.sh && ./install.sh
+```
+
+**说明：**
+- 自动从GitHub下载install.sh脚本
+- 自动检测Docker和docker-compose是否安装
+- 自动创建必要的目录（caddyfile、data）
+- 自动从GitHub下载docker-compose.prod.yml配置文件（如果不存在）
+- 可选设置AUTH_TOKEN
+- 自动检测并使用 `docker-compose` 或 `docker compose` 命令
+- 拉取最新镜像并启动容器
+- 访问地址：http://localhost:5000
+
+**Linux/Mac:**
+```bash
+chmod +x install.sh && ./install.sh
+```
+
+**Windows:**
+```bash
+install.bat
+```
+
+安装脚本会自动：
+- 检查Docker和docker-compose是否安装
+- 创建必要的目录（caddyfile、data）
+- 询问是否设置AUTH_TOKEN（可选）
+- 从GitHub拉取最新镜像
+- 启动容器
+
+**更新到最新版本：**
+```bash
+# 一行命令更新
+(docker-compose -f docker-compose.prod.yml pull && docker-compose -f docker-compose.prod.yml up -d || docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d)
+
+# 或使用更新脚本
+# Linux/Mac: ./update.sh
+# Windows: update.bat
+```
+
 #### 使用 GitHub Actions 构建镜像
 
 项目已配置 GitHub Actions 工作流，自动构建并推送 Docker 镜像到 GitHub Container Registry (ghcr.io)。
@@ -60,10 +112,13 @@ docker run -d \
 
 **注意**：容器名称建议使用 `caddyfile-editor`，而不是镜像名称，便于后续管理。
 
-或者使用docker-compose（在docker-compose.yml中设置AUTH_TOKEN环境变量）：
+或者使用docker-compose（使用docker-compose.prod.yml，已配置GitHub镜像）：
 ```bash
-# 编辑 docker-compose.yml，取消注释 AUTH_TOKEN 行并设置你的token
-docker-compose up -d
+# 使用生产环境配置（从GitHub拉取镜像）
+docker-compose -f docker-compose.prod.yml pull
+docker-compose -f docker-compose.prod.yml up -d
+
+# 编辑 docker-compose.prod.yml，取消注释 AUTH_TOKEN 行并设置你的token
 ```
 
 **注意**：

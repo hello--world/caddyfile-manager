@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  caddyfile-editor:
+    image: ghcr.io/hello--world/caddyfile-manager:latest
+    container_name: caddyfile-editor
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./caddyfile:/etc/caddy
+      - ./data:/app/data
+    environment:
+      - CADDYFILE_PATH=/etc/caddy/Caddyfile
+      - CADDY_BINARY=caddy
+      - PORT=5000
+      - HOST=0.0.0.0
+      # 取消注释下面一行并设置你的token以启用访问认证
+      # - AUTH_TOKEN=your-secret-token
+    restart: unless-stopped
+    networks:
+      - caddyfile-network
+
+networks:
+  caddyfile-network:
+    driver: bridge
+
