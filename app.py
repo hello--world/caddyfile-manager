@@ -522,7 +522,8 @@ def validate_caddyfile():
             # 使用caddy validate命令验证
             result = subprocess.run(
                 [CADDY_BINARY, 'validate', '--config', tmp_path],
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
                 timeout=10
             )
@@ -578,7 +579,8 @@ def reload_caddy():
         try:
             result = subprocess.run(
                 [CADDY_BINARY, 'reload', '--config', CADDYFILE_PATH],
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
                 timeout=10
             )
