@@ -60,18 +60,50 @@ fi
 echo ""
 
 # 检查Caddy是否安装（可选，但建议安装以便使用reload功能）
-if ! command -v caddy &> /dev/null; then
+CADDY_FOUND=false
+CADDY_PATH=""
+
+# 检查多种可能的caddy路径
+if command -v caddy &> /dev/null; then
+    CADDY_PATH=$(command -v caddy)
+    CADDY_FOUND=true
+elif [ -f "/usr/bin/caddy" ]; then
+    CADDY_PATH="/usr/bin/caddy"
+    CADDY_FOUND=true
+elif [ -f "/usr/local/bin/caddy" ]; then
+    CADDY_PATH="/usr/local/bin/caddy"
+    CADDY_FOUND=true
+elif [ -f "/opt/caddy/caddy" ]; then
+    CADDY_PATH="/opt/caddy/caddy"
+    CADDY_FOUND=true
+else
+    # 尝试运行caddy version来验证（即使不在PATH中）
+    if caddy version &> /dev/null 2>&1; then
+        CADDY_FOUND=true
+    fi
+fi
+
+if [ "$CADDY_FOUND" = false ]; then
     echo "⚠️  警告: 未找到Caddy，reload功能将不可用"
     echo "   建议安装Caddy以使用配置重载功能"
     echo "   安装方法: https://caddyserver.com/docs/install"
     echo ""
-    read -p "是否继续安装？(y/n): " CONTINUE_WITHOUT_CADDY
-    if [ "$CONTINUE_WITHOUT_CADDY" != "y" ] && [ "$CONTINUE_WITHOUT_CADDY" != "Y" ]; then
-        echo "安装已取消"
-        exit 0
+    # 检查是否在交互式终端中
+    if [ -t 0 ]; then
+        read -p "是否继续安装？(y/n): " CONTINUE_WITHOUT_CADDY
+        if [ "$CONTINUE_WITHOUT_CADDY" != "y" ] && [ "$CONTINUE_WITHOUT_CADDY" != "Y" ]; then
+            echo "安装已取消"
+            exit 0
+        fi
+    else
+        echo "⚠️  非交互式环境，自动继续安装（Caddy可在安装后单独安装）"
     fi
 else
-    echo "✅ Caddy 已安装"
+    if [ -n "$CADDY_PATH" ]; then
+        echo "✅ Caddy 已安装: $CADDY_PATH"
+    else
+        echo "✅ Caddy 已安装"
+    fi
 fi
 echo ""
 
