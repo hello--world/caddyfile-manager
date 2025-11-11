@@ -7,7 +7,7 @@ Caddyfile 解析器和生成器
 """
 
 import re
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
 
 class CaddyfileParser:
@@ -173,7 +173,7 @@ class CaddyfileParser:
             "unparsed": unparsed
         }
     
-    def _parse_site_block(self, lines: List[str], start_idx: int, preserve_unparsed: bool = True) -> tuple[Optional[Dict[str, Any]], int]:
+    def _parse_site_block(self, lines: List[str], start_idx: int, preserve_unparsed: bool = True) -> Tuple[Optional[Dict[str, Any]], int]:
         """
         解析站点块
         
@@ -231,7 +231,7 @@ class CaddyfileParser:
         
         return site, consumed
     
-    def _parse_directives_block(self, lines: List[str], start_idx: int, parent_indent: Optional[int], preserve_unparsed: bool = True) -> tuple[List[Dict[str, Any]], int]:
+    def _parse_directives_block(self, lines: List[str], start_idx: int, parent_indent: Optional[int], preserve_unparsed: bool = True) -> Tuple[List[Dict[str, Any]], int]:
         """
         解析指令块（递归）
         
@@ -303,7 +303,7 @@ class CaddyfileParser:
         
         return directives, consumed
     
-    def _parse_directive_with_block(self, lines: List[str], start_idx: int, directive_indent: int, preserve_unparsed: bool = True) -> tuple[Optional[Dict[str, Any]], int]:
+    def _parse_directive_with_block(self, lines: List[str], start_idx: int, directive_indent: int, preserve_unparsed: bool = True) -> Tuple[Optional[Dict[str, Any]], int]:
         """
         解析指令（可能包含块）
         
