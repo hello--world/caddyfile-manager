@@ -156,17 +156,86 @@ docker-compose pull
 docker-compose up -d
 ```
 
-### 方式三：systemd服务部署
+### 方式三：systemd服务部署（非Docker版本）
+
+#### 一键安装脚本（推荐）
+
+**一行命令安装：**
+
+```bash
+# 下载安装脚本并执行（自动从GitHub克隆代码）
+curl -s https://raw.githubusercontent.com/hello--world/caddyfile-manager/main/install.sh | bash
+# curl -o install-native.sh https://raw.githubusercontent.com/hello--world/caddyfile-manager/main/install-native.sh && chmod +x install-native.sh && sudo ./install-native.sh
+```
+
+**或者使用wget：**
+
+```bash
+wget -O install-native.sh https://raw.githubusercontent.com/hello--world/caddyfile-manager/main/install-native.sh && chmod +x install-native.sh && sudo ./install-native.sh
+```
+
+**说明：**
+- 自动检查Python3、pip3、Git是否安装
+- 可选择从GitHub克隆最新代码或使用当前目录文件
+- 自动创建Python虚拟环境
+- 自动安装所有依赖
+- 自动配置systemd服务
+- 可选设置AUTH_TOKEN
+- 自动启动服务
+- 安装目录：`/opt/caddyfile-manager`
+- 访问地址：http://localhost:5000
+
+**如果已有代码，直接运行：**
+
+```bash
+chmod +x install-native.sh
+sudo ./install-native.sh
+```
+
+安装脚本会自动：
+- 检查Python3、pip3、Git是否安装
+- 询问是否从GitHub克隆最新代码（如果Git可用）
+- 创建虚拟环境并安装依赖
+- 创建必要的目录（`/opt/caddyfile-manager`、`/etc/caddy`）
+- 询问是否设置AUTH_TOKEN（可选）
+- 配置并启动systemd服务
+
+**常用命令：**
+```bash
+# 查看服务状态
+sudo systemctl status caddyfile-manager
+
+# 查看日志
+sudo journalctl -u caddyfile-manager -f
+
+# 停止服务
+sudo systemctl stop caddyfile-manager
+
+# 启动服务
+sudo systemctl start caddyfile-manager
+
+# 重启服务
+sudo systemctl restart caddyfile-manager
+
+# 卸载服务
+sudo systemctl stop caddyfile-manager && sudo systemctl disable caddyfile-manager && sudo rm /etc/systemd/system/caddyfile-manager.service && sudo systemctl daemon-reload
+```
+
+#### 手动安装（备选方案）
+
+如果不想使用一键安装脚本，可以手动安装：
 
 1. 将项目复制到系统目录：
 ```bash
 sudo cp -r . /opt/caddyfile-manager
-sudo chown -R www-data:www-data /opt/caddyfile-manager
+sudo chown -R root:root /opt/caddyfile-manager
 ```
 
-2. 安装Python依赖：
+2. 创建虚拟环境并安装Python依赖：
 ```bash
-sudo pip3 install -r /opt/caddyfile-manager/requirements.txt
+cd /opt/caddyfile-manager
+sudo python3 -m venv venv
+sudo venv/bin/pip install -r requirements.txt
 ```
 
 3. 安装systemd服务：
