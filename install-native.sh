@@ -116,75 +116,61 @@ SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "📁 准备安装目录..."
-# 创建临时目录用于克隆（如果需要）
-TEMP_CLONE_DIR="/tmp/caddyfile-manager-clone-$$"
 
 if [ "$USE_GIT" = true ]; then
-    # 从Git克隆代码
-    echo "📥 从Git仓库克隆代码..."
+    # 从Git直接克隆到安装目录
+    echo "📥 从Git仓库克隆代码到安装目录..."
     echo "   仓库: $GIT_REPO"
     echo "   分支: $GIT_BRANCH"
-    if [ -d "$TEMP_CLONE_DIR" ]; then
-        rm -rf "$TEMP_CLONE_DIR"
+    echo "   安装目录: $INSTALL_DIR"
+    
+    # 如果安装目录已存在，先备份或删除
+    if [ -d "$INSTALL_DIR" ]; then
+        echo "⚠️  安装目录已存在，将清空后重新克隆..."
+        rm -rf "$INSTALL_DIR"
     fi
     
-    if git clone -b "$GIT_BRANCH" "$GIT_REPO" "$TEMP_CLONE_DIR"; then
+    if git clone -b "$GIT_BRANCH" "$GIT_REPO" "$INSTALL_DIR"; then
         echo "✅ 代码克隆完成"
-        SOURCE_DIR="$TEMP_CLONE_DIR"
     else
-        echo "⚠️  Git克隆失败，将使用当前目录的文件"
-        echo "   如果当前目录没有代码文件，安装可能会失败"
-        USE_GIT=false
-        SOURCE_DIR="$SCRIPT_DIR"
+        echo "❌ 错误: Git克隆失败"
+        exit 1
     fi
 else
-    # 使用当前目录的文件
-    echo "📋 使用当前目录的文件"
-    SOURCE_DIR="$SCRIPT_DIR"
-fi
-echo ""
-
-# 创建安装目录
-mkdir -p "$INSTALL_DIR"
-echo "✅ 安装目录: $INSTALL_DIR"
-echo ""
-
-# 复制文件到安装目录
-echo "📋 复制文件到安装目录..."
-# 复制主要文件
-cp -f "$SOURCE_DIR/app.py" "$INSTALL_DIR/" 2>/dev/null || {
-    echo "❌ 错误: 未找到 app.py 文件"
-    if [ "$USE_GIT" = true ]; then
-        rm -rf "$TEMP_CLONE_DIR"
+    # 使用当前目录的文件，复制到安装目录
+    echo "📋 使用当前目录的文件，复制到安装目录..."
+    
+    # 创建安装目录
+    mkdir -p "$INSTALL_DIR"
+    
+    # 复制主要文件
+    cp -f "$SCRIPT_DIR/app.py" "$INSTALL_DIR/" 2>/dev/null || {
+        echo "❌ 错误: 未找到 app.py 文件"
+        exit 1
+    }
+    
+    if [ -f "$SCRIPT_DIR/caddyfile_parser.py" ]; then
+        cp -f "$SCRIPT_DIR/caddyfile_parser.py" "$INSTALL_DIR/" 2>/dev/null || true
     fi
-    exit 1
-}
+    if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
+        cp -f "$SCRIPT_DIR/requirements.txt" "$INSTALL_DIR/" 2>/dev/null || true
+    fi
+    # 复制templates目录
+    if [ -d "$SCRIPT_DIR/templates" ]; then
+        cp -r "$SCRIPT_DIR/templates" "$INSTALL_DIR/" 2>/dev/null || true
+    fi
+    # 复制static目录（如果存在）
+    if [ -d "$SCRIPT_DIR/static" ]; then
+        cp -r "$SCRIPT_DIR/static" "$INSTALL_DIR/" 2>/dev/null || true
+    fi
+    # 复制config目录（如果存在）
+    if [ -d "$SCRIPT_DIR/config" ]; then
+        cp -r "$SCRIPT_DIR/config" "$INSTALL_DIR/" 2>/dev/null || true
+    fi
+    echo "✅ 文件复制完成"
+fi
 
-if [ -f "$SOURCE_DIR/caddyfile_parser.py" ]; then
-    cp -f "$SOURCE_DIR/caddyfile_parser.py" "$INSTALL_DIR/" 2>/dev/null || true
-fi
-if [ -f "$SOURCE_DIR/requirements.txt" ]; then
-    cp -f "$SOURCE_DIR/requirements.txt" "$INSTALL_DIR/" 2>/dev/null || true
-fi
-# 复制templates目录
-if [ -d "$SOURCE_DIR/templates" ]; then
-    cp -r "$SOURCE_DIR/templates" "$INSTALL_DIR/" 2>/dev/null || true
-fi
-# 复制static目录（如果存在）
-if [ -d "$SOURCE_DIR/static" ]; then
-    cp -r "$SOURCE_DIR/static" "$INSTALL_DIR/" 2>/dev/null || true
-fi
-# 复制config目录（如果存在）
-if [ -d "$SOURCE_DIR/config" ]; then
-    cp -r "$SOURCE_DIR/config" "$INSTALL_DIR/" 2>/dev/null || true
-fi
-echo "✅ 文件复制完成"
-
-# 清理临时克隆目录
-if [ "$USE_GIT" = true ] && [ -d "$TEMP_CLONE_DIR" ]; then
-    rm -rf "$TEMP_CLONE_DIR"
-    echo "🧹 临时文件已清理"
-fi
+echo "✅ 安装目录准备完成: $INSTALL_DIR"
 echo ""
 
 # 创建虚拟环境
@@ -206,7 +192,7 @@ if [ -f "requirements.txt" ]; then
     pip install -r requirements.txt
 else
     echo "⚠️  未找到requirements.txt，安装基础依赖..."
-    pip install Flask==3.0.0 flask-cors==4.0.0 python-dotenv==1.0.0 PyYAML==6.0.1 redis==5.0.1
+    pip install Flask flask-cors python-dotenv PyYAML redis
 fi
 deactivate
 echo "✅ 依赖安装完成"
