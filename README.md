@@ -164,7 +164,7 @@ docker-compose up -d
 
 ```bash
 # 下载安装脚本并执行（自动从GitHub克隆代码）
-curl -s https://raw.githubusercontent.com/hello--world/caddyfile-manager/main/install.sh | bash
+curl -s https://raw.githubusercontent.com/hello--world/caddyfile-manager/main/install-native.sh | bash
 # curl -o install-native.sh https://raw.githubusercontent.com/hello--world/caddyfile-manager/main/install-native.sh && chmod +x install-native.sh && sudo ./install-native.sh
 ```
 
