@@ -524,7 +524,7 @@ def validate_caddyfile():
                 [CADDY_BINARY, 'validate', '--config', tmp_path],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True,
+                universal_newlines=True,
                 timeout=10
             )
             
@@ -581,7 +581,7 @@ def reload_caddy():
                 [CADDY_BINARY, 'reload', '--config', CADDYFILE_PATH],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True,
+                universal_newlines=True,
                 timeout=10
             )
             
