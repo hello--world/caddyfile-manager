@@ -235,14 +235,14 @@ class CaddyfileParser:
         """
         解析指令块（递归）
         
-        使用大括号匹配来确定块边界，而不是依赖缩进
+        完全基于大括号匹配来确定块边界，不依赖缩进
         
         返回: (directives_list, consumed_lines)
         """
         directives = []
         i = start_idx
         consumed = 0
-        brace_count = 0  # 大括号计数，用于跟踪嵌套层级
+        brace_count = 0  # 大括号计数，用于跟踪嵌套层级（0表示当前块层级）
         
         while i < len(lines):
             line = lines[i]
@@ -256,9 +256,6 @@ class CaddyfileParser:
                 consumed += 1
                 continue
             
-            # 计算当前行的缩进
-            current_indent = len(line) - len(line.lstrip())
-            
             # 统计当前行的大括号
             open_braces = stripped.count('{')
             close_braces = stripped.count('}')
@@ -266,7 +263,7 @@ class CaddyfileParser:
             # 如果遇到单独的 }，检查是否是当前块的结束
             if stripped == '}':
                 if brace_count == 0:
-                    # 这是当前块的结束
+                    # 这是当前块的结束，消费这一行并退出
                     consumed += 1
                     break
                 else:
@@ -277,8 +274,42 @@ class CaddyfileParser:
                     consumed += 1
                     continue
             
-            # 更新大括号计数（在检查块结束之后）
-            brace_count += open_braces - close_braces
+            # 如果遇到单独的 {，这不应该出现在块内容中（应该是块开始）
+            if stripped == '{':
+                # 这可能是格式错误，但继续处理
+                brace_count += 1
+                i += 1
+                consumed += 1
+                continue
+            
+            # 先尝试解析指令（不更新 brace_count）
+            # 如果指令包含块，_parse_directive_with_block 会递归处理整个块
+            # 计算当前行的缩进（仅用于传递给子函数，不作为判断依据）
+            current_indent = len(line) - len(line.lstrip())
+            
+            # 解析指令
+            directive, consumed_lines = self._parse_directive_with_block(lines, i, current_indent, preserve_unparsed)
+            if directive:
+                directives.append(directive)
+                i += consumed_lines
+                consumed += consumed_lines
+                # 指令已经被完全解析（包括它的块），不需要更新 brace_count
+                continue
+            else:
+                # 无法解析为指令，可能是格式错误
+                # 在这种情况下，更新 brace_count 来处理大括号
+                if close_braces > 0:
+                    brace_count -= close_braces
+                    if brace_count < 0:
+                        # 这是当前块的结束
+                        consumed += 1
+                        break
+                if open_braces > 0:
+                    brace_count += open_braces
+                # 跳过这一行
+                i += 1
+                consumed += 1
+                continue
             
             # 如果父级缩进为 None（站点块的第一层），检查是否遇到了新的站点地址
             if parent_indent is None:
@@ -287,38 +318,6 @@ class CaddyfileParser:
                     # 但排除单独的 { 和 }
                     if stripped != '{' and stripped != '}':
                         break
-            else:
-                # 如果指定了父级缩进，检查是否还在当前块内
-                # 主要依赖大括号计数，但也要考虑缩进（用于处理格式错误的情况）
-                if current_indent <= parent_indent and brace_count == 0:
-                    # 缩进减少且没有未闭合的大括号，说明已经退出当前块
-                    # 但需要检查是否是格式错误（下一行缩进更深）
-                    if i + 1 < len(lines):
-                        next_line = lines[i + 1].rstrip()
-                        next_stripped = next_line.strip()
-                        if next_stripped and not next_stripped.startswith('#'):
-                            next_indent = len(next_line) - len(next_line.lstrip())
-                            # 如果下一行的缩进更深，可能是格式错误，继续解析
-                            if next_indent > current_indent:
-                                # 格式错误，但继续解析
-                                pass
-                            else:
-                                # 缩进减少或相等，且没有未闭合的大括号，说明已经退出当前块
-                                break
-                    else:
-                        # 没有下一行，退出当前块
-                        break
-            
-            # 解析指令
-            directive, consumed_lines = self._parse_directive_with_block(lines, i, current_indent, preserve_unparsed)
-            if directive:
-                directives.append(directive)
-                i += consumed_lines
-                consumed += consumed_lines
-            else:
-                # 无法解析，跳过
-                i += 1
-                consumed += 1
         
         return directives, consumed
     
@@ -400,10 +399,9 @@ class CaddyfileParser:
             if start_idx + 1 < len(lines):
                 next_line = lines[start_idx + 1].rstrip()
                 next_stripped = next_line.strip()
-                next_indent = len(next_line) - len(next_line.lstrip())
                 
-                if next_stripped == '{' and next_indent > directive_indent:
-                    # 下一行是 {，且缩进正确
+                if next_stripped == '{':
+                    # 下一行是 {，开始解析块
                     block_start = start_idx + 2
                     consumed += 1
                 else:
@@ -414,16 +412,14 @@ class CaddyfileParser:
                 return directive, consumed
         
         # 解析块内容
-        block_indent = directive_indent + 1  # 块内容应该比指令缩进更深
-        sub_directives, consumed_in_block = self._parse_directives_block(lines, block_start, block_indent, preserve_unparsed)
+        # 注意：不传递 parent_indent，让 _parse_directives_block 完全基于大括号匹配
+        sub_directives, consumed_in_block = self._parse_directives_block(lines, block_start, None, preserve_unparsed)
         directive["directives"] = sub_directives
         consumed += consumed_in_block
         
-        # 查找块结束的 }
-        if block_start + consumed_in_block < len(lines):
-            end_line = lines[block_start + consumed_in_block].rstrip()
-            if end_line.strip() == '}':
-                consumed += 1
+        # _parse_directives_block 在遇到 } 且 brace_count == 0 时会停止并消费该行
+        # 所以这里不需要再检查 }，因为已经被消费了
+        # 但是，如果 consumed_in_block 为 0，说明没有解析任何内容，可能是格式错误
         
         return directive, consumed
     
@@ -580,8 +576,9 @@ class CaddyfileGenerator:
                 # 有子指令，在同一行添加 {
                 directive_line += " {"
                 lines.append(directive_line)
-                # 递归生成子指令
-                self._generate_directives(lines, sub_directives, base_indent + 1, indent_str)
+                # 递归生成子指令（增加缩进）
+                # 计算子指令的缩进：使用与当前指令相同的缩进（Caddyfile 允许块内指令与块本身同缩进）
+                self._generate_directives(lines, sub_directives, base_indent, indent_str)
                 # 结束块
                 lines.append(indent_str + "}")
             else:
