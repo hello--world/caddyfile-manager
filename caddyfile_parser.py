@@ -235,11 +235,14 @@ class CaddyfileParser:
         """
         解析指令块（递归）
         
+        使用大括号匹配来确定块边界，而不是依赖缩进
+        
         返回: (directives_list, consumed_lines)
         """
         directives = []
         i = start_idx
         consumed = 0
+        brace_count = 0  # 大括号计数，用于跟踪嵌套层级
         
         while i < len(lines):
             line = lines[i]
@@ -253,13 +256,29 @@ class CaddyfileParser:
                 consumed += 1
                 continue
             
-            # 检查是否是块结束
-            if stripped == '}':
-                consumed += 1
-                break
-            
             # 计算当前行的缩进
             current_indent = len(line) - len(line.lstrip())
+            
+            # 统计当前行的大括号
+            open_braces = stripped.count('{')
+            close_braces = stripped.count('}')
+            
+            # 如果遇到单独的 }，检查是否是当前块的结束
+            if stripped == '}':
+                if brace_count == 0:
+                    # 这是当前块的结束
+                    consumed += 1
+                    break
+                else:
+                    # 这是嵌套块的结束，减少计数
+                    brace_count -= 1
+                    # 继续解析，因为还在当前块内
+                    i += 1
+                    consumed += 1
+                    continue
+            
+            # 更新大括号计数（在检查块结束之后）
+            brace_count += open_braces - close_braces
             
             # 如果父级缩进为 None（站点块的第一层），检查是否遇到了新的站点地址
             if parent_indent is None:
@@ -270,10 +289,10 @@ class CaddyfileParser:
                         break
             else:
                 # 如果指定了父级缩进，检查是否还在当前块内
-                # 如果缩进小于等于父级缩进，说明已经退出当前块
-                # 但如果缩进只是稍微小一点（可能是格式错误），且下一行的缩进更深，则继续解析
-                if current_indent <= parent_indent:
-                    # 检查下一行是否有更深的缩进（可能是格式错误导致的缩进不一致）
+                # 主要依赖大括号计数，但也要考虑缩进（用于处理格式错误的情况）
+                if current_indent <= parent_indent and brace_count == 0:
+                    # 缩进减少且没有未闭合的大括号，说明已经退出当前块
+                    # 但需要检查是否是格式错误（下一行缩进更深）
                     if i + 1 < len(lines):
                         next_line = lines[i + 1].rstrip()
                         next_stripped = next_line.strip()
@@ -284,7 +303,7 @@ class CaddyfileParser:
                                 # 格式错误，但继续解析
                                 pass
                             else:
-                                # 缩进减少或相等，说明已经退出当前块
+                                # 缩进减少或相等，且没有未闭合的大括号，说明已经退出当前块
                                 break
                     else:
                         # 没有下一行，退出当前块
