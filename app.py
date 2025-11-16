@@ -9,6 +9,7 @@ import json
 import subprocess
 import yaml
 from pathlib import Path
+from typing import Optional
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from functools import wraps
@@ -48,6 +49,10 @@ REDIS_KEY_PREFIX = os.getenv('REDIS_KEY_PREFIX', 'caddyfile:directives:')
 
 # 认证配置
 AUTH_TOKEN = os.getenv('AUTH_TOKEN', None)
+
+# 备份配置
+BACKUP_DIR = os.getenv('BACKUP_DIR', None)  # 如果未设置，使用 Caddyfile 所在目录的 backups 子目录
+MAX_BACKUPS = int(os.getenv('MAX_BACKUPS', 30))  # 最多保留的备份数量
 
 def load_config():
     """加载配置文件"""
@@ -377,6 +382,80 @@ def check_duplicate_addresses(sites):
     
     return duplicates
 
+def create_backup(source_path: str) -> Optional[str]:
+    """
+    创建 Caddyfile 备份
+    
+    Args:
+        source_path: 源文件路径
+        
+    Returns:
+        备份文件路径，如果失败返回 None
+    """
+    try:
+        # 如果源文件不存在，不需要备份
+        if not os.path.exists(source_path):
+            return None
+        
+        # 确定备份目录
+        if BACKUP_DIR:
+            backup_dir = BACKUP_DIR
+        else:
+            # 使用源文件所在目录的 backups 子目录
+            source_dir = os.path.dirname(source_path)
+            backup_dir = os.path.join(source_dir, 'backups')
+        
+        # 创建备份目录
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        # 生成备份文件名（使用时间戳）
+        from datetime import datetime
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        source_filename = os.path.basename(source_path)
+        backup_filename = f"{source_filename}.{timestamp}.bak"
+        backup_path = os.path.join(backup_dir, backup_filename)
+        
+        # 复制文件
+        import shutil
+        shutil.copy2(source_path, backup_path)
+        
+        # 清理旧备份，只保留最近 MAX_BACKUPS 个
+        cleanup_old_backups(backup_dir, source_filename, MAX_BACKUPS)
+        
+        return backup_path
+    except Exception as e:
+        print(f'创建备份失败: {e}')
+        return None
+
+def cleanup_old_backups(backup_dir: str, source_filename: str, max_backups: int):
+    """
+    清理旧的备份文件，只保留最近 max_backups 个
+    
+    Args:
+        backup_dir: 备份目录
+        source_filename: 源文件名（用于匹配备份文件）
+        max_backups: 最多保留的备份数量
+    """
+    try:
+        # 获取所有匹配的备份文件
+        backup_pattern = f"{source_filename}.*.bak"
+        import glob
+        backup_files = glob.glob(os.path.join(backup_dir, backup_pattern))
+        
+        # 按修改时间排序（最新的在前）
+        backup_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        
+        # 删除超出数量的旧备份
+        if len(backup_files) > max_backups:
+            for old_backup in backup_files[max_backups:]:
+                try:
+                    os.remove(old_backup)
+                    print(f'已删除旧备份: {old_backup}')
+                except Exception as e:
+                    print(f'删除旧备份失败 {old_backup}: {e}')
+    except Exception as e:
+        print(f'清理旧备份失败: {e}')
+
 @app.route('/api/caddyfile', methods=['POST'])
 @require_auth
 def save_caddyfile():
@@ -442,14 +521,21 @@ def save_caddyfile():
         if caddyfile_dir and not os.path.exists(caddyfile_dir):
             os.makedirs(caddyfile_dir, exist_ok=True)
         
+        # 在保存之前创建备份
+        backup_path = create_backup(CADDYFILE_PATH)
+        backup_info = ''
+        if backup_path:
+            backup_info = f'（已创建备份）'
+        
         # 保存文件（统一格式，全量覆盖）
         with open(CADDYFILE_PATH, 'w', encoding='utf-8') as f:
             f.write(content)
         
         return jsonify({
             'success': True,
-            'message': 'Caddyfile已保存（已格式化）',
-            'content': content
+            'message': f'Caddyfile已保存（已格式化）{backup_info}',
+            'content': content,
+            'backup_path': backup_path
         })
     except Exception as e:
         return jsonify({
@@ -461,7 +547,41 @@ def save_caddyfile():
 def validate_caddyfile():
     """验证Caddyfile配置"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
+        
+        # 如果没有提供内容，直接验证已保存的 Caddyfile 文件
+        if 'sites' not in data and 'content' not in data:
+            if os.path.exists(CADDYFILE_PATH):
+                # 直接验证实际文件
+                result = subprocess.run(
+                    [CADDY_BINARY, 'validate', '--config', CADDYFILE_PATH],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                    timeout=10
+                )
+                
+                if result.returncode == 0:
+                    return jsonify({
+                        'success': True,
+                        'valid': True,
+                        'message': '配置验证通过'
+                    })
+                else:
+                    error_output = (result.stderr or '') + (result.stdout or '')
+                    if not error_output.strip():
+                        error_output = '配置验证失败（未知错误）'
+                    
+                    return jsonify({
+                        'success': True,
+                        'valid': False,
+                        'message': error_output.strip()
+                    })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Caddyfile 文件不存在'
+                }), 400
         
         # 支持两种验证方式
         if 'sites' in data:
@@ -512,20 +632,31 @@ def validate_caddyfile():
                 'error': '缺少content或sites字段'
             }), 400
         
-        # 创建临时文件进行验证
-        import tempfile
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.Caddyfile', delete=False) as tmp:
-            tmp.write(content)
-            tmp_path = tmp.name
+        # 使用固定文件路径进行验证（在 Caddyfile 所在目录）
+        # 重要：验证文件必须创建在与 Caddyfile 相同的目录中，这样 import 路径才能正确解析
+        caddyfile_dir = os.path.dirname(CADDYFILE_PATH)
+        if not caddyfile_dir:
+            caddyfile_dir = os.getcwd()
+        
+        # 确保目录存在
+        os.makedirs(caddyfile_dir, exist_ok=True)
+        
+        # 使用固定的验证文件路径
+        validate_file_path = os.path.join(caddyfile_dir, '.Caddyfile.validate')
         
         try:
-            # 使用caddy validate命令验证
+            # 写入内容到固定文件
+            with open(validate_file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            # 使用caddy validate命令验证（使用与 Caddyfile 相同的目录，确保 import 路径正确）
             result = subprocess.run(
-                [CADDY_BINARY, 'validate', '--config', tmp_path],
+                [CADDY_BINARY, 'validate', '--config', validate_file_path],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-                timeout=10
+                timeout=10,
+                cwd=caddyfile_dir  # 设置工作目录，确保相对路径正确
             )
             
             if result.returncode == 0:
@@ -535,15 +666,20 @@ def validate_caddyfile():
                     'message': '配置验证通过'
                 })
             else:
+                # 合并 stdout 和 stderr，Caddy 的错误信息可能在 stderr 中
+                error_output = (result.stderr or '') + (result.stdout or '')
+                if not error_output.strip():
+                    error_output = '配置验证失败（未知错误）'
+                
                 return jsonify({
                     'success': True,
                     'valid': False,
-                    'message': result.stderr or result.stdout
+                    'message': error_output.strip()
                 })
         finally:
-            # 清理临时文件
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+            # 验证完成后可以选择保留或删除验证文件
+            # 这里保留文件，方便调试（如果需要可以删除）
+            pass
                 
     except subprocess.TimeoutExpired:
         return jsonify({
@@ -555,6 +691,104 @@ def validate_caddyfile():
             'success': True,
             'valid': False,
             'message': '未找到caddy命令，跳过验证'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/backups', methods=['GET'])
+@require_auth
+def list_backups():
+    """获取备份列表"""
+    try:
+        # 确定备份目录
+        if BACKUP_DIR:
+            backup_dir = BACKUP_DIR
+        else:
+            source_dir = os.path.dirname(CADDYFILE_PATH)
+            backup_dir = os.path.join(source_dir, 'backups')
+        
+        if not os.path.exists(backup_dir):
+            return jsonify({
+                'success': True,
+                'backups': []
+            })
+        
+        # 获取所有备份文件
+        source_filename = os.path.basename(CADDYFILE_PATH)
+        backup_pattern = f"{source_filename}.*.bak"
+        import glob
+        backup_files = glob.glob(os.path.join(backup_dir, backup_pattern))
+        
+        # 按修改时间排序（最新的在前）
+        backup_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        
+        # 构建备份信息列表
+        backups = []
+        for backup_path in backup_files:
+            backup_filename = os.path.basename(backup_path)
+            mtime = os.path.getmtime(backup_path)
+            from datetime import datetime
+            backup_time = datetime.fromtimestamp(mtime)
+            
+            # 从文件名提取时间戳
+            # 格式：Caddyfile.YYYYMMDD_HHMMSS.bak
+            timestamp_str = backup_filename.replace(f"{source_filename}.", "").replace(".bak", "")
+            
+            backups.append({
+                'filename': backup_filename,
+                'path': backup_path,
+                'timestamp': timestamp_str,
+                'time': backup_time.strftime('%Y-%m-%d %H:%M:%S'),
+                'size': os.path.getsize(backup_path)
+            })
+        
+        return jsonify({
+            'success': True,
+            'backups': backups,
+            'count': len(backups)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/backups/restore', methods=['POST'])
+@require_auth
+def restore_backup():
+    """恢复备份"""
+    try:
+        data = request.get_json()
+        backup_path = data.get('backup_path') or data.get('path')
+        
+        if not backup_path:
+            return jsonify({
+                'success': False,
+                'error': '缺少 backup_path 参数'
+            }), 400
+        
+        # 检查备份文件是否存在
+        if not os.path.exists(backup_path):
+            return jsonify({
+                'success': False,
+                'error': f'备份文件不存在: {backup_path}'
+            }), 404
+        
+        # 在恢复之前创建当前文件的备份
+        current_backup = create_backup(CADDYFILE_PATH)
+        
+        # 复制备份文件到 Caddyfile
+        import shutil
+        shutil.copy2(backup_path, CADDYFILE_PATH)
+        
+        return jsonify({
+            'success': True,
+            'message': '备份已恢复',
+            'backup_path': backup_path,
+            'current_backup': current_backup  # 恢复前创建的备份
         })
     except Exception as e:
         return jsonify({

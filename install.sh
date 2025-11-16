@@ -39,6 +39,44 @@ mkdir -p data
 echo "✅ 目录创建完成"
 echo ""
 
+# 确保 GENERAL_SETTINGS 文件存在（供 Caddyfile import 使用）
+if [ ! -f "caddyfile/GENERAL_SETTINGS" ]; then
+    echo "📄 创建 GENERAL_SETTINGS 文件..."
+    if [ -f "GENERAL_SETTINGS" ]; then
+        # 如果当前目录有 GENERAL_SETTINGS，复制到 caddyfile 目录
+        cp GENERAL_SETTINGS caddyfile/GENERAL_SETTINGS
+        echo "✅ 已从当前目录复制 GENERAL_SETTINGS"
+    else
+        # 否则创建一个默认的空文件（或从 GitHub 下载）
+        cat > caddyfile/GENERAL_SETTINGS << 'EOF'
+# 通用设置
+# 这个文件包含所有代理通用的配置
+
+# 编码设置（如果需要）
+# encode gzip
+
+# 通用头部设置（如果需要）
+# header_up X-Real-IP {http.request.remote.host}
+# header_up X-Forwarded-For {http.request.remote.host}
+# header_up X-Forwarded-Proto {http.request.scheme}
+
+# 超时设置（如果需要）
+# request_body_max_size 100MB
+
+# 日志设置（如果需要）
+# log {
+#     output file /var/log/caddy/access.log
+#     format json
+# }
+
+# 注意：如果不需要任何通用设置，这个文件可以为空
+# 但必须存在，否则 Caddy 会报错
+EOF
+        echo "✅ 已创建默认的 GENERAL_SETTINGS 文件"
+    fi
+    echo ""
+fi
+
 # 检查docker-compose.prod.yml是否存在，如果不存在则从GitHub下载
 if [ ! -f "docker-compose.prod.yml" ]; then
     echo "📥 从GitHub下载docker-compose.prod.yml配置文件..."

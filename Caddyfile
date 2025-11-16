@@ -1,5 +1,347 @@
-example.com
+chat.uvp.cc
 {
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    reverse_proxy https://www.urbandictionary.com {
+    header_up Host {upstream_hostport}
+    header_up X-Forwarded-Host {host}
+    }
+    handle_path /hello {
+    reverse_proxy 127.0.0.1:43468
+    }
+    handle_path /chat {
+    reverse_proxy 127.0.0.1:3000
+    }
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+}
+
+su-666.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    encode gzip
+    reverse_proxy localhost:25500
+    handle_path /s0676h3d44
+    reverse_proxy 127.0.0.1:43468
+}
+
+chat666.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    root * /data/htmls/ai/
+    encode gzip
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+    file_server
+}
+
+ai.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    root * /data/htmls/ai/
+    encode gzip
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+    file_server
+}
+
+drop.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    encode gzip
     reverse_proxy localhost:8080
-    rewrite ///
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+}
+
+spug.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    reverse_proxy https://www.urbandictionary.com {
+    header_up Host {upstream_hostport}
+    header_up X-Forwarded-Host {host}
+    }
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+}
+
+f.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    encode gzip
+    reverse_proxy localhost:5244
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+}
+
+git.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    encode gzip
+    reverse_proxy localhost:3003
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+}
+
+sh.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    root * /data/htmls/sh/
+    encode gzip
+    handle_path /-t-t-t-ok/* {
+    reverse_proxy 127.0.0.1:7681
+    }
+    handle_path /-sh-/* {
+    basicauth {
+    auto $2a$14$omB.LhkKLSfA1uP4Oz6pxuvAT85gY1fIXrQX8Z9qHkUHio4ZQTS7q
+    }
+    reverse_proxy 127.0.0.1:7681
+    }
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+    file_server
+}
+
+cdn.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    root * /data/htmls/nginx/
+    encode gzip
+    reverse_proxy localhost:2080
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+    file_server
+}
+
+webdav.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    root * /data/htmls/nginx/
+    encode gzip
+    reverse_proxy localhost:2080
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+    file_server
+}
+
+drive.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    encode gzip
+    reverse_proxy localhost:5212
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+}
+
+bing.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    root * /data/htmls/bing-wallpaper/docs/
+    encode gzip
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+    file_server
+}
+
+img.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    reverse_proxy localhost:90
+    encode gzip
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+}
+
+uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    root * /data/htmls/uvp/src
+    encode gzip
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+    file_server
+}
+
+admin.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    reverse_proxy localhost:5000
+    encode gzip
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+}
+
+my.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    reverse_proxy localhost:9980
+    encode gzip
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+}
+
+www.uvp.cc
+{
+    tls /data/ssl/uvp.cc.pem /data/ssl/uvp.cc.key
+    reverse_proxy localhost:9980
+    encode gzip
+    handle_path /s0676h3d44 {
+    reverse_proxy 127.0.0.1:43468
+    }
+}
+
+*.hubx.one
+{
+    tls /data/ssl/hubx.one.pem /data/ssl/hubx.one.key
+    @docker host docker.hubx.one
+    handle @docker {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://registry-1.docker.io {
+    header_up Host registry-1.docker.io
+    header_up User-Agent "Docker-Client/20.10.0 (linux)"
+    header_down Www-Authenticate "Bearer realm=\"https://docker-auth.hubx.one/token\",service=\"registry.docker.io\""
+    header_down Docker-Distribution-Api-Version registry/2.0
+    header_down Set-Cookie registry-1.docker.io docker.hubx.one
+    }
+    }
+    @docker-auth host docker-auth.hubx.one
+    handle @docker-auth {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://auth.docker.io {
+    header_up Host auth.docker.io
+    header_down Set-Cookie auth.docker.io docker-auth.hubx.one
+    }
+    }
+    @docker-storage host docker-storage.hubx.one
+    handle @docker-storage {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://registry-1.docker.io {
+    header_up Host registry-1.docker.io
+    header_up User-Agent "Docker-Client/20.10.0 (linux)"
+    header_up X-Forwarded-For {http.request.remote.host}
+    header_up X-Forwarded-Proto {http.request.scheme}
+    }
+    @quay host quay.hubx.one
+    handle @quay {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://quay.io {
+    header_up Host quay.io
+    header_up X-Real-IP {http.request.remote.host}
+    header_up X-Forwarded-Port {http.request.port}
+    header_down Set-Cookie quay.io quay.hubx.one
+    header_down Www-Authenticate "Bearer realm=\"https://quay.hubx.one/v2/auth\",service=\"quay.io\""
+    header_down Location ^https://cdn[0-9]*\.quay\.io https://quay-storage.hubx.one
+    }
+    }
+    @quay-storage host quay-storage.hubx.one
+    handle @quay-storage {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://cdn03.quay.io {
+    header_up Host cdn03.quay.io
+    header_up X-Real-IP {http.request.remote.host}
+    header_up X-Forwarded-Port {http.request.port}
+    header_down Set-Cookie cdn03.quay.io quay-storage.hubx.one
+    }
+    }
+    @gcr host gcr.hubx.one
+    handle @gcr {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://gcr.io {
+    header_up Host gcr.io
+    header_up X-Real-IP {http.request.remote.host}
+    header_up X-Forwarded-Port {http.request.port}
+    header_down Set-Cookie gcr.io gcr.hubx.one
+    header_down Www-Authenticate "Bearer realm=\"https://gcr.hubx.one/v2/token\",service=\"gcr.io\""
+    header_down Location https://storage.googleapis.com https://gcr-storage.hubx.one
+    }
+    }
+    @gcr-storage host gcr-storage.hubx.one
+    handle @gcr-storage {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://storage.googleapis.com {
+    header_up Host storage.googleapis.com
+    header_up X-Real-IP {http.request.remote.host}
+    header_up X-Forwarded-Port {http.request.port}
+    header_down Set-Cookie storage.googleapis.com gcr-storage.hubx.one
+    }
+    }
+    @ghcr host ghcr.hubx.one
+    handle @ghcr {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://ghcr.io {
+    header_up Host ghcr.io
+    header_up X-Real-IP {http.request.remote.host}
+    header_up X-Forwarded-Port {http.request.port}
+    header_down Set-Cookie ghcr.io ghcr.hubx.one
+    header_down Www-Authenticate "Bearer realm=\"https://ghcr.hubx.one/token\",service=\"ghcr.io\""
+    header_down Location https://pkg-containers.githubusercontent.com https://ghcr-storage.hubx.one
+    }
+    }
+    @ghcr-storage host ghcr-storage.hubx.one
+    handle @ghcr-storage {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://pkg-containers.githubusercontent.com {
+    header_up Host pkg-containers.githubusercontent.com
+    header_up X-Real-IP {http.request.remote.host}
+    header_up X-Forwarded-Port {http.request.port}
+    header_down Set-Cookie pkg-containers.githubusercontent.com ghcr-storage.hubx.one
+    }
+    }
+    @k8s host k8s.hubx.one
+    handle @k8s {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://registry.k8s.io {
+    header_up Host registry.k8s.io
+    header_up X-Real-IP {http.request.remote.host}
+    header_up X-Forwarded-Port {http.request.port}
+    header_down Set-Cookie registry.k8s.io k8s.hubx.one
+    header_down Www-Authenticate "Bearer realm=\"https://k8s.hubx.one/v2/token\",service=\"registry.k8s.io\""
+    header_down Location ^https://[a-zA-Z0-9-]+.docker.pkg.dev https://k8s-storage-gcr.hubx.one
+    header_down Location ^https://[a-zA-Z0-9-]+.s3.dualstack.[a-zA-Z0-9-]+.amazonaws.com https://k8s-storage-aws.hubx.one
+    }
+    }
+    @k8s-storage-gcr host k8s-storage-gcr.hubx.one
+    handle @k8s-storage-gcr {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://us-west1-docker.pkg.dev {
+    header_up Host us-west1-docker.pkg.dev
+    header_up X-Real-IP {http.request.remote.host}
+    header_up X-Forwarded-Port {http.request.port}
+    header_down Set-Cookie us-west1-docker.pkg.dev k8s-storage-gcr.hubx.one
+    }
+    }
+    @k8s-storage-aws host k8s-storage-aws.hubx.one
+    handle @k8s-storage-aws {
+    import GENERAL_SETTINGS
+    reverse_proxy * https://prod-registry-k8s-io-us-west-1.s3.dualstack.us-west-1.amazonaws.com {
+    header_up Host prod-registry-k8s-io-us-west-1.s3.dualstack.us-west-1.amazonaws.com
+    header_up X-Real-IP {http.request.remote.host}
+    header_up X-Forwarded-Port {http.request.port}
+    header_down Set-Cookie prod-registry-k8s-io-us-west-1.s3.dualstack.us-west-1.amazonaws.com k8s-storage-aws.hubx.one
+    }
+    }
+    @files host files.hubx.one
+    handle @files {
+    root * /data/files
+    file_server browse
+    }
+    handle {
+    respond "404 Not Found" 404
+    }
+    }
 }

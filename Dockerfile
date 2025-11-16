@@ -24,6 +24,9 @@ COPY caddyfile_parser.py .
 # 创建Caddyfile目录
 RUN mkdir -p /etc/caddy
 
+# 复制 GENERAL_SETTINGS 文件到 /etc/caddy/（供 import 使用）
+COPY GENERAL_SETTINGS /etc/caddy/GENERAL_SETTINGS
+
 # 设置环境变量
 ENV CADDYFILE_PATH=/etc/caddy/Caddyfile
 ENV CADDY_BINARY=caddy
