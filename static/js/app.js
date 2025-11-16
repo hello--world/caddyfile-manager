@@ -273,6 +273,14 @@ function init() {
                 if (window.isLoading) {
                     return;
                 }
+                
+                // 检查内容是否真的改变了（与原始内容比较）
+                const currentContent = window.codeMirror.getValue();
+                if (currentContent === window.originalContent) {
+                    // 内容没有改变，不标记为未保存
+                    return;
+                }
+                
                 updateStats();
                 // 标记为未保存
                 markAsUnsaved();

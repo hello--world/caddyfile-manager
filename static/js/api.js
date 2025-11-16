@@ -343,9 +343,17 @@ async function loadCaddyfile() {
                 
                 // 更新CodeMirror或textarea
                 if (window.codeMirror) {
-                    // 设置一个标志，表示正在加载，忽略这次 change 事件
+                    // 先设置标志和状态，防止 change 事件误触发
                     window.isLoading = true;
+                    window.isSaved = true; // 直接设置为已保存状态
+                    // 先更新原始内容，这样 change 事件触发时比较会通过
+                    window.originalContent = window.codeContent || '';
+                    // 设置 CodeMirror 的值（这会触发 change 事件，但会被 isLoading 标志忽略）
                     window.codeMirror.setValue(window.codeContent || '');
+                    // 立即更新文件信息显示为已保存
+                    if (typeof updateFileInfo === 'function') {
+                        updateFileInfo();
+                    }
                     // 强制刷新语法高亮
                     setTimeout(() => {
                         if (window.codeMirror) {
@@ -353,12 +361,18 @@ async function loadCaddyfile() {
                             // 使用自定义 Caddyfile 模式
                             window.codeMirror.setOption('mode', 'caddyfile');
                         }
-                        // 加载完成后，标记为已保存（必须在设置值之后）
+                        // 加载完成后，确保状态正确
                         window.isLoading = false;
+                        // 再次更新 originalContent，确保与当前值一致
+                        if (window.codeMirror) {
+                            window.originalContent = window.codeMirror.getValue();
+                        }
+                        // 确保标记为已保存
+                        window.isSaved = true;
                         if (typeof markAsSaved === 'function') {
                             markAsSaved();
                         }
-                    }, 100);
+                    }, 200); // 增加延迟，确保所有事件都处理完
                 } else {
                     const editor = document.getElementById('caddyfileEditor');
                     if (editor) {
