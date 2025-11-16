@@ -11,6 +11,7 @@ window.syncInProgress = false; // 防止同步循环
 window.filePath = ''; // 当前文件路径
 window.isSaved = true; // 文件是否已保存
 window.originalContent = ''; // 原始内容（用于比较是否修改）
+window.isLoading = false; // 是否正在加载文件（用于忽略加载时的 change 事件）
 
 // 显示/隐藏加载模态框
 function showLoading(text = '处理中...') {
@@ -268,6 +269,10 @@ function init() {
             // 监听编辑器内容变化，实时同步到Build模式
             let syncTimeout = null;
             window.codeMirror.on('change', function() {
+                // 如果正在加载，忽略这次 change 事件
+                if (window.isLoading) {
+                    return;
+                }
                 updateStats();
                 // 标记为未保存
                 markAsUnsaved();

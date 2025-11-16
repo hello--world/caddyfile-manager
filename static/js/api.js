@@ -332,11 +332,6 @@ async function loadCaddyfile() {
                     window.filePath = data.path;
                 }
                 
-                // 标记为已保存（刚加载的文件）
-                if (typeof markAsSaved === 'function') {
-                    markAsSaved();
-                }
-                
                 // 更新界面：同时显示Build模式和Code模式
                 // 如果有站点，自动选择第一个
                 if (window.sitesData.length > 0 && window.currentSiteIndex < 0) {
@@ -348,6 +343,8 @@ async function loadCaddyfile() {
                 
                 // 更新CodeMirror或textarea
                 if (window.codeMirror) {
+                    // 设置一个标志，表示正在加载，忽略这次 change 事件
+                    window.isLoading = true;
                     window.codeMirror.setValue(window.codeContent || '');
                     // 强制刷新语法高亮
                     setTimeout(() => {
@@ -356,11 +353,20 @@ async function loadCaddyfile() {
                             // 使用自定义 Caddyfile 模式
                             window.codeMirror.setOption('mode', 'caddyfile');
                         }
+                        // 加载完成后，标记为已保存（必须在设置值之后）
+                        window.isLoading = false;
+                        if (typeof markAsSaved === 'function') {
+                            markAsSaved();
+                        }
                     }, 100);
                 } else {
                     const editor = document.getElementById('caddyfileEditor');
                     if (editor) {
                         editor.value = window.codeContent || '';
+                    }
+                    // 标记为已保存（刚加载的文件）
+                    if (typeof markAsSaved === 'function') {
+                        markAsSaved();
                     }
                 }
                 if (typeof updateStats === 'function') {
