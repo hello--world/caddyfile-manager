@@ -452,21 +452,22 @@ window.copySite = function(index) {
     
     // 添加到站点列表
     window.sitesData.push(newSite);
-    window.currentSiteIndex = window.sitesData.length - 1;
+    const newIndex = window.sitesData.length - 1;
     
     // 标记为未保存
     if (typeof markAsUnsaved === 'function') {
         markAsUnsaved();
     }
     
-    renderBuildMode();
+    // 明确选中新复制的站点
+    selectSite(newIndex);
     
     // 同步到Code模式
     if (typeof syncToCode === 'function') {
         syncToCode();
     }
     
-    // 滚动到新复制的站点列表项
+    // 滚动到新复制的站点列表项并聚焦地址输入框
     setTimeout(() => {
         const sitesList = document.getElementById('sitesList');
         if (sitesList) {
@@ -477,12 +478,12 @@ window.copySite = function(index) {
         }
         
         // 聚焦到地址输入框，让用户输入新域名
-        const addressInput = document.querySelector(`#site-address-${window.currentSiteIndex}`);
+        const addressInput = document.querySelector(`#site-address-${newIndex}`);
         if (addressInput) {
             addressInput.focus();
             addressInput.select();
         }
-    }, 100);
+    }, 150);
     
     // 移动端：复制站点后自动折叠站点列表
     if (window.innerWidth < 768) {
