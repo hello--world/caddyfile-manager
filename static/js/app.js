@@ -139,14 +139,25 @@ function initSplitPanes() {
             const savedMainSizes = localStorage.getItem('caddyfile_main_split_sizes');
             const mainSizes = savedMainSizes ? JSON.parse(savedMainSizes) : [20, 80];
             
+            // 防抖函数，用于实时保存
+            let mainSaveTimeout = null;
+            
             window.mainSplit = Split([sitesListColumn, editorColumn], {
                 sizes: mainSizes,
                 minSize: [200, 400],
                 gutterSize: 4,
                 cursor: 'col-resize',
                 direction: 'horizontal',
+                onDrag: function(sizes) {
+                    // 实时保存（防抖）
+                    clearTimeout(mainSaveTimeout);
+                    mainSaveTimeout = setTimeout(() => {
+                        localStorage.setItem('caddyfile_main_split_sizes', JSON.stringify(sizes));
+                    }, 100);
+                },
                 onDragEnd: function(sizes) {
-                    // 保存宽度比例到localStorage
+                    // 拖拽结束时保存
+                    clearTimeout(mainSaveTimeout);
                     localStorage.setItem('caddyfile_main_split_sizes', JSON.stringify(sizes));
                 }
             });
@@ -165,14 +176,25 @@ function initSplitPanes() {
             const savedEditorSizes = localStorage.getItem('caddyfile_editor_split_sizes');
             const editorSizes = savedEditorSizes ? JSON.parse(savedEditorSizes) : [50, 50];
             
+            // 防抖函数，用于实时保存
+            let editorSaveTimeout = null;
+            
             window.editorSplit = Split([buildModeColumn, codeModeColumn], {
                 sizes: editorSizes,
                 minSize: [300, 300],
                 gutterSize: 4,
                 cursor: 'col-resize',
                 direction: 'horizontal',
+                onDrag: function(sizes) {
+                    // 实时保存（防抖）
+                    clearTimeout(editorSaveTimeout);
+                    editorSaveTimeout = setTimeout(() => {
+                        localStorage.setItem('caddyfile_editor_split_sizes', JSON.stringify(sizes));
+                    }, 100);
+                },
                 onDragEnd: function(sizes) {
-                    // 保存宽度比例到localStorage
+                    // 拖拽结束时保存
+                    clearTimeout(editorSaveTimeout);
                     localStorage.setItem('caddyfile_editor_split_sizes', JSON.stringify(sizes));
                     // 调整后刷新CodeMirror
                     if (window.codeMirror) {
