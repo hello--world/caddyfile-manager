@@ -194,9 +194,14 @@ function renderSitesList() {
                     ${notes ? `<small class="text-muted d-block">${highlightText(notes, keyword)}</small>` : ''}
                     <small class="text-muted">${directiveCount} 个指令</small>
                 </div>
-                <button class="btn btn-sm btn-outline-danger ms-2" onclick="event.stopPropagation(); removeSite(${index})" title="删除站点">
-                    <i class="bi bi-trash"></i>
-                </button>
+                <div class="d-flex align-items-center gap-1">
+                    <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); copySite(${index})" title="复制站点">
+                        <i class="bi bi-files"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); removeSite(${index})" title="删除站点">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
             </div>
         `;
         
@@ -415,6 +420,75 @@ window.addSite = function() {
         const sitesListContent = document.getElementById('sitesListContent');
         if (sitesListContent && typeof bootstrap !== 'undefined') {
             // 延迟折叠，让用户看到添加的效果
+            setTimeout(() => {
+                const collapse = bootstrap.Collapse.getInstance(sitesListContent);
+                if (collapse) {
+                    collapse.hide();
+                } else {
+                    const newCollapse = new bootstrap.Collapse(sitesListContent, {
+                        toggle: false
+                    });
+                    newCollapse.hide();
+                }
+            }, 400);
+        }
+    }
+};
+
+// 复制站点（除了域名，其他全部复制）
+window.copySite = function(index) {
+    if (index < 0 || index >= window.sitesData.length) {
+        return;
+    }
+    
+    const sourceSite = window.sitesData[index];
+    
+    // 深拷贝站点数据（除了域名）
+    const newSite = {
+        address: '', // 域名留空，让用户输入
+        directives: JSON.parse(JSON.stringify(sourceSite.directives || [])), // 深拷贝指令数组
+        notes: sourceSite.notes || '' // 复制备注
+    };
+    
+    // 添加到站点列表
+    window.sitesData.push(newSite);
+    window.currentSiteIndex = window.sitesData.length - 1;
+    
+    // 标记为未保存
+    if (typeof markAsUnsaved === 'function') {
+        markAsUnsaved();
+    }
+    
+    renderBuildMode();
+    
+    // 同步到Code模式
+    if (typeof syncToCode === 'function') {
+        syncToCode();
+    }
+    
+    // 滚动到新复制的站点列表项
+    setTimeout(() => {
+        const sitesList = document.getElementById('sitesList');
+        if (sitesList) {
+            const activeItem = sitesList.querySelector('.list-group-item.active');
+            if (activeItem) {
+                activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+        
+        // 聚焦到地址输入框，让用户输入新域名
+        const addressInput = document.querySelector(`#site-address-${window.currentSiteIndex}`);
+        if (addressInput) {
+            addressInput.focus();
+            addressInput.select();
+        }
+    }, 100);
+    
+    // 移动端：复制站点后自动折叠站点列表
+    if (window.innerWidth < 768) {
+        const sitesListContent = document.getElementById('sitesListContent');
+        if (sitesListContent && typeof bootstrap !== 'undefined') {
+            // 延迟折叠，让用户看到复制的效果
             setTimeout(() => {
                 const collapse = bootstrap.Collapse.getInstance(sitesListContent);
                 if (collapse) {
